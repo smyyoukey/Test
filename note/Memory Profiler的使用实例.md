@@ -1,10 +1,10 @@
 # Memory Profiler的使用实例
 
-#### 以下内容以flash项目为例:
+#### 以下内容以flash项目为例:  
 
 >首先我在项目中集成了Matrix与LeakCanary,分析后台OOM信息并进行测试:
 
->如下图所示,这是Matrix抛出的memory leak与大量I/O操作的隐患;根据调用栈可以判断出这些操作是在哪里发生的.(由图中可以看出Matrix单从检查memory leak方面来说没有LeakCanary的信息详细)
+>如下图所示,这是Matrix抛出的memory leak与大量I/O操作的隐患;根据调用栈可以判断出这些操作是在哪里发生的.(由图中可以看出Matrix单从检查memory leak方面来说没有LeakCanary的信息详细)  
 
 <div align="center">
 <img src="./Memory Profiler的使用实例pic/Screenshot_2019-02-19-12-12-34-112_best.flashlight.png"  alt="Memory Profiler 界面" />

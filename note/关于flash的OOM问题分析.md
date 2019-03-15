@@ -5,33 +5,33 @@
 
 <div align="center">
 <img src="./关于flash OOM问题的分析/before.png"  alt="Memory Profiler 界面" />
- </div>
+</div>
 
 >然后依次打开其他界面(Activity),再返回主界面,可以看到内存使用情况如下:
 
- <div align="center">
+<div align="center">
  <img src="./关于flash OOM问题的分析/before2.jpg"  alt="Memory Profiler 界面" />
-  </div>
+</div>
 
 >此时,应用经常需要使用的资源应该都已经加载完毕了(实际上GC之后会再小一些),这时候开始进行一些需要大量占用内存空间的操作:
 
-  <div align="center">
+<div align="center">
   <img src="./关于flash OOM问题的分析/before1.jpg"  alt="Memory Profiler 界面" />
-   </div>
+</div>
 
 >此时已经点击加载过许多的全屏广告,当普通的全屏广告打开时,内存占用会提升40到50MB,关闭后又回到了打开之前的数值,但广告图片的资源会缓存在内存里,如上图所示.
 
 >为了检测这些资源之后是否会释放,继续点击加载全屏广告.然后加载出了webView形式的全屏广告.此时的内存变化如下图:
 
-   <div align="center">
+<div align="center">
    <img src="./关于flash OOM问题的分析/ADcut.png"  alt="Memory Profiler 界面" />
-    </div>
+</div>
 
 >很明显该广告所需的资源非常大,占用了将近150MB的内存,而且基本上是Graphics类型的资源,所以可以得出结论,该广告的资源使用量非常大,在全屏广告弹出前要尽量保证足够的内存空间.之后再次加载了几个全屏广告,退回到主界面:
 
-   <div align="center">
+<div align="center">
    <img src="./关于flash OOM问题的分析/ADcut2.png"  alt="Memory Profiler 界面" />
-    </div>
+</div>
 
 >情况如上图所示,广告展示完成后,资源没有释放,依然存在于内存中,多次去手动GC,将应用退至后台,内存占有依然没有变化,那么这个广告的资源肯定泄漏了而且非常严重.这个广告资源本应该退出了theme详情页就释放的,可是现在却到了不杀应用不释放的地步.
 

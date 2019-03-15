@@ -1,6 +1,30 @@
 # Memory Profiler的使用实例
 
-#### 以下内容以flash项目为例
+#### 以下内容以flash项目为例:
+
+>首先我在项目中集成了Matrix与LeakCanary,分析后台OOM信息并进行测试:
+
+>如下图所示,这是Matrix抛出的memory leak与大量I/O操作的隐患;根据调用栈可以判断出这些操作是在哪里发生的.(由图中可以看出Matrix单从检查memory leak方面来说没有LeakCanary的信息详细)
+
+<div align="center">
+<img src="./Memory Profiler的使用实例pic/Screenshot_2019-02-19-12-12-34-112_best.flashlight.png"  alt="Memory Profiler 界面" />
+</div>
+
+>接下来是LeakCanary查找出来的内存泄漏问题
+
+<div align="center">
+<img src="./Memory Profiler的使用实例pic/Screenshot_2019-03-15-10-40-06-124_best.flashlight.png"  alt="Memory Profiler 界面" />
+</div>
+
+<div align="center">
+<img src="./Memory Profiler的使用实例pic/Screenshot_2019-03-15-10-40-24-372_best.flashlight.png"  alt="Memory Profiler 界面" />
+</div>
+
+<div align="center">
+<img src="./Memory Profiler的使用实例pic/Screenshot_2019-03-15-10-40-59-491_best.flashlight.png"  alt="Memory Profiler 界面" />
+</div>
+
+>如以上几张图所示,谁持有谁已经一目了然了.接下来,我们再进一步用Profiler去查看实时的内存堆栈,就拿以上2个log作为例子:
 
 首先打开一次所有的界面(比如说设置页面,皮肤选择页面等),最后回到主界面,这个时候点击"捕获堆转储"的按钮,显示此时时的内存分布,这时候可以看见:
 <div align="center">
@@ -32,3 +56,5 @@
   <div align="center">
   <img src="./Memory Profiler的使用实例pic/2cut1.png"  alt="Memory Profiler 界面" />
   </div>
+
+  >如上图所示,RubbishCleanActivity的context也依然被持有着,不过也是以弱引用的形式.

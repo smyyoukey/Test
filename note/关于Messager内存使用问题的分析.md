@@ -44,7 +44,7 @@ java.lang.OutOfMemoryError: Failed to allocate a 130822 byte allocation with 909
     at java.lang.reflect.Method.invoke(Method.java:372)
     at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:914)
     at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:707)
-    ```
+```
     上面的日志应该是谷歌的webView广告在操作JSONObject这个对象时发生了OOM.
 
     然后再看leak canary 捕获到的Memory leak:
@@ -92,25 +92,25 @@ java.lang.OutOfMemoryError: Failed to allocate a 130822 byte allocation with 909
 
 一段其他人的解释:
 
-```cpp
-1.单独的FLAG_ACTIVITY_NEW_TASK并不等价于启动模式 singleTask，它仅表示寻找activity所需的任务栈压入，
+
+>1.单独的FLAG_ACTIVITY_NEW_TASK并不等价于启动模式 singleTask，它仅表示寻找activity所需的任务栈压入，
 （即TaskAffinity指定的任务栈，TaskAffinity默认为应用包名）
 
-2.FLAG_ACTIVITY_NEW_TASK+FLAG_ACTIVITY_CLEAR_TOP也不等价于启动模式singleTask
+>2.FLAG_ACTIVITY_NEW_TASK+FLAG_ACTIVITY_CLEAR_TOP也不等价于启动模式singleTask
 
-3.在FLAG_ACTIVITY_NEW_TASK+FLAG_ACTIVITY_CLEAR_TOP的情况下，AndroidManifest.xml中设置activity的启动模式为
+>3.在FLAG_ACTIVITY_NEW_TASK+FLAG_ACTIVITY_CLEAR_TOP的情况下，AndroidManifest.xml中设置activity的启动模式为
 standard或singleTask时activity入栈方式是不一样的
 
-3.1当启动模式为standard时，如果activity所需的栈中已经存在该activity的实例了，那么这个实例连同它之上的activity都要出栈，
+>>3.1当启动模式为standard时，如果activity所需的栈中已经存在该activity的实例了，那么这个实例连同它之上的activity都要出栈，
 然后再新建一个activity实例入栈。
 
-3.2当启动模式为singleTask时，如果activity所需的栈中已经存在该activity的实例了，那么系统会调用该实例的onNewIntent()
+>>3.2当启动模式为singleTask时，如果activity所需的栈中已经存在该activity的实例了，那么系统会调用该实例的onNewIntent()
 方法，且只将该实例之上的activity出栈。
 
-3.3如果activity所需的栈中不存在该activity的实例，则不论启动模式为standard还是singleTask，都是新建activity实例直接
+>>3.3如果activity所需的栈中不存在该activity的实例，则不论启动模式为standard还是singleTask，都是新建activity实例直接
 入栈。
 
-4.AndroidManifest.xml中设置activity的启动模式为singleTask时，则不论是FLAG_ACTIVITY_NEW_TASK+
+>4.AndroidManifest.xml中设置activity的启动模式为singleTask时，则不论是FLAG_ACTIVITY_NEW_TASK+
 FLAG_ACTIVITY_CLEAR_TOP还是只有FLAG_ACTIVITY_NEW_TASK效果一样，因为singleTask模式中默认就带有
 FLAG_ACTIVITY_CLEAR_TOP标识。
 
@@ -118,7 +118,7 @@ FLAG_ACTIVITY_CLEAR_TOP标识。
 来源：CSDN
 原文：https://blog.csdn.net/jiejingguo/article/details/80511136
 版权声明：本文为博主原创文章，转载请附上博文链接！
-```
+
 所以,另一个问题就是上述中的3.1与3.2.应用中的所有startActivity的intent都是以这种方法设置flag的,那么只要是代码唤起应用,都会把
 
 包括MainActivtyTask在内的连同它之上的activity都出栈一次,然后新建MainActivty实例.所以光是MainActivty的生命周期全run一遍

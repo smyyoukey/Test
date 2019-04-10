@@ -125,4 +125,102 @@ FLAG_ACTIVITY_CLEAR_TOP标识。
 
 的次数就特别多,更别说其中的方法了.而且这并不是重启应用,所以很多内存泄漏或者其他问题会在这个过程中不断积累,导致OOM.所以,
 
-我认为这个问题修改后会导致很多问题的出现次数下降甚至不出现.   
+我认为这个问题修改后会导致很多问题的出现次数下降甚至不出现.  
+
+3.问题3:
+```java
+java.lang.OutOfMemoryError
+    at com.android.internal.util.FastXmlSerializer.<init>(FastXmlSerializer.java:55)
+    at com.android.internal.util.XmlUtils.writeMapXml(XmlUtils.java:177)
+    at android.app.SharedPreferencesImpl.writeToFile(SharedPreferencesImpl.java:596)
+    at android.app.SharedPreferencesImpl.access$800(SharedPreferencesImpl.java:52)
+    at android.app.SharedPreferencesImpl$2.run(SharedPreferencesImpl.java:511)
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1112)
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:587)
+    at java.lang.Thread.run(Thread.java:841)
+```
+这个log在umeng后台出现的次数很多;但是在stackoverflow上却找到了针对这个问题的讨论,具体链接如下:
+https://stackoverflow.com/questions/22459734/outofmemoryerror-when-writing-to-sharedpreferences-file#
+
+<div align="center">
+<img src="./关于Messager的内存使用问题分析/messagerlog_feedback.jpg"  alt="leak info" />
+</div>
+
+
+所以说这个问题应该是单纯因为内存空间紧张所产生的,主要是因为其他方面占用的内存资源过多,才导致在这个过程中发生OOM.所以之后发现umeng后台出现这个log可以直接略过.
+
+
+问题4: 有关主界面nativeAd的问题:
+
+<div align="center">
+<img src="./关于Messager的内存使用问题分析/Screenshot_2019-04-08-16-44-27.png"  alt="leak info" />
+</div>
+
+这是一个必现的问题,但复现的场景条件比较苛刻(即重复问题2的操作).
+
+主要由问题2产生;
+
+出现的原因应该是在
+
+方法onNativeRetrieved() 中:
+
+```java
+ NativeAd nativeAd = SplashNativeAdCache.getInstance(getApplicationContext()).next();
+ if (nativeAd == null || mIsAdShowing) {
+            return;
+        }
+
+        ......
+
+if (view == null) {
+               view = nativeAd.createAdView(this, null);
+           }
+           nativeAd.renderAdView(view);
+           nativeAd.prepare(view);
+
+
+          ......
+
+
+          mNativeAdContainer.addView(view);
+            mNativeAdContainer.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mNativeAdContainer.setVisibility(View.VISIBLE);
+                    mIsAdShowing = true;
+                    startValueAnimation(mNativeAdContainer.findViewById(R.id.audio_splash));
+                }
+            }, 100);
+            mAdapter.notifyDataSetChanged();
+        }
+```
+这个方法会在 onResume() 和 接收到"ACTION_REFRESH_NATIVE_AD"这条广播后执行; 然后看发送这条广播的时机:
+在SplashNativeAdCache中的onNativeLoad()回调中会调用sendBroadcast()这个方法去发送这条广播.所以出现这个问题的原因应该是:
+
+    SplashNativeAdCache这个单例在native广告加载好之后,发送了这条广播,由于当前有多个MainActivity实例,在nativeAd加载调用
+    并加载完后又在SplashNativeAdCache中加载完了一个,导致同时显示了2个native广告.
+
+
+最后,总结一下这些问题带来的收获:
+
+首先解释一下:
+1.常见的内存问题表现形式：  
+1.1 OutOfMemory：内存溢出  
+1.2 Memory Leak：内存泄露  
+二者共同点：  
+(1) 通常最终的状态就会导致OOM错误  
+(2) 在Java堆或本地内存中都可能发生  
+二者不同点：  
+(1) ML是已经分配好的内存或对象，当不再需要，没有得到释放 而OOM则是没有足够的空间来供jvm分配新的内存块  
+(2) ML的内存曲线总体上是一条斜向上的曲线而OOM不是，反之未必
+
+2.内存溢出类型：  
+虚拟机栈溢出、本地方法栈溢出、方法区溢出、堆溢出、运行时常量池溢出  
+
+在了解这些后,结合以上问题与实例来说:
+
+1.该应用中导致OOM的原因基本上是因为在应用的正常生命周期中Activity的多次创建导致方法被反复调用,导致问题发生率比较高;
+
+2.有些问题应该是共有的.
+
+3.在加载广告到展示的过程中内存资源消耗比较大,对于本身内存小的手机来说,这就是短板.

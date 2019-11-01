@@ -1,5 +1,149 @@
 # 临时备忘录
 
+### (2019.11.1)
+Android Tools属性
+日常开发过程中，我们都会遇到这样一种场景：我们写出的 UI 效果在对接数据之前需要提前进行预览，进而调整  UI 细节和排版问题。我们一般的做法是什么样的？如果存在像 TextView 或者 ImageView 这种基础控件，你是不是还在通过诸如 android:text="xxx" 和 android:src="@drawable/xxx" 的方式来测试和预览UI效果？当然你肯定也会遇到这些“脏数据”给你带来的困扰：测试的时候某些地方出现了本不该出现的数据，事后可能一拍脑门才发现，原来是布局中控件预览数据没有清除导致的。
+如果是 RecyclerView，在后台接口尚能测试的情况下，你是否又要自己生成“假数据”并手写 Adapter 呢？这时候你不禁会问：有没有一种方法，既能够做到布局时预览数据方便排版，又能够在对接真实数据运行后动态替换和移除这些无关数据呢？
+
+只需要在 XML 布局文件的根元素中添加即可：
+```xml
+<RootTag xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools" >
+```
+
+Design-time View Attributes
+这就是我们先前效果图中的重要功臣了，即：布局设计时的控件属性。这类属性主要作用于 View 控件，如上文所说的 tools:context 就是“成员”之一，下面我们来介绍其他重要成员。
+在此之前，我们需要先揭开 tools 命名空间的另一层神秘面纱：tools: 可以替换任何以 android: 为前缀的属性，并为其设置样例数据（sample data）。当然，正如我们前面所说，tools 属性只能在布局编辑期间有效，App真正运行后就毫无意义了，所以，我们就可以像下面这样来在运行前预览布局效果：
+
+<div align="center">
+<img src="./recent temp note/tools实例.png"  alt="tools 实例" />
+</div>
+
+上图对应的布局为：
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:background="@android:color/white"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        tools:targetApi="m"
+        tools:ignore="UnusedAttribute">
+
+    <ImageView
+            android:id="@+id/card_item_avatar"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintVertical_bias="0.0"
+            tools:ignore="ContentDescription"
+            tools:srcCompat="@drawable/user_other"/>
+    <TextView
+            android:id="@+id/card_item_username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/card_item_title"
+            app:layout_constraintEnd_toEndOf="@+id/card_item_title"
+            app:layout_constraintHorizontal_bias="0.0"
+            android:textSize="12sp"
+            android:textColor="@color/username_text_color"
+            android:layout_marginEnd="16dp"
+            android:paddingEnd="16dp"
+            tools:text="水月沐风" />
+    <TextView
+            android:id="@+id/card_item_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="@color/title_text_color"
+            app:layout_constraintStart_toEndOf="@+id/card_item_avatar"
+            android:layout_marginStart="12dp"
+            app:layout_constraintTop_toBottomOf="@+id/card_item_username"
+            android:layout_marginTop="8dp"
+            android:maxLines="1"
+            tools:text="今天上海的夜色真美！"/>
+    <TextView
+            android:id="@+id/card_item_content"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toBottomOf="@+id/card_item_avatar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintVertical_bias="1.0"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:textColor="@color/content_text_color"
+            android:textStyle="normal"
+            app:layout_constraintEnd_toEndOf="@+id/card_item_bottom_border"
+            android:layout_marginEnd="16dp"
+            android:layout_marginStart="16dp"
+            app:layout_constraintHorizontal_bias="0.0"
+            tools:text="人生若只如初见，何事秋风悲画扇..."/>
+    <ImageView
+            android:id="@+id/card_item_poster"
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/card_item_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="16dp"
+            android:scaleType="centerCrop"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintVertical_bias="0.0"
+            tools:ignore="ContentDescription"
+            android:visibility="visible"
+            tools:src="@drawable/shanghai_night"/>
+    <View
+            android:id="@+id/card_item_bottom_border"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            app:layout_constraintTop_toBottomOf="@+id/card_item_poster"
+            android:background="#ffededfe"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            app:layout_constraintStart_toStartOf="parent"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/card_item_date"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/date_text_color"
+            android:textSize="12sp"
+            tools:text="2019-08-10"/>
+</android.support.constraint.ConstraintLayout>
+```
+
+通过上面代码我们可以发现：通过 对 TextView 使用 tools:text 属性代替 android:text 就可以实现文本具体效果的预览，然而这项设置并不会对我们 App 实际运行效果产生影响。同理，通过将 tools:src 作用于 ImageView 也可以达到预览图片的效果。此外。我们还可以对其他以 android: 为前缀的属性进行预览而不影响实际运行的效果，例如：上面布局代码中的底部分割线 <View>，我们想将其在 App 实际运行的时候隐藏掉，但我们还是需要知道它的预览效果和所占高度。
+
+完整内容链接如下：
+
+作者：水月沐风
+链接：https://juejin.im/post/5d500b1a6fb9a06b1417d5c9
+来源：掘金
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
 ### (8.12-8.18)
 
 1.有关fake icon功能：真正地去切换应用的项目icon挺麻烦的，fake icon功能的实现我个人认为是一种取巧行为，并能达到目的。主要实现有人写了我就直接贴[链接](https://github.com/panwj/TestDemo/wiki/Android%E5%8A%A8%E6%80%81%E6%9B%B4%E6%96%B0%E5%BA%94%E7%94%A8%E5%9B%BE%E6%A0%87

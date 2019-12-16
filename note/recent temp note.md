@@ -1,5 +1,61 @@
 # 临时备忘录
 
+### (2019.12.11)
+队列是一种特殊的线性表，它只允许在表的前端（front）进行删除操作，而在表的后端（rear）进行插入操作。进行插入操作的端称为队尾，进行删除操作的端称为队头。队列中没有元素时，称为空队列。
+
+在队列这种数据结构中，最先插入的元素将是最先被删除的元素；反之最后插入的元素将是最后被删除的元素，因此队列又称为“先进先出”（FIFO—first in first out）的线性表。
+
+在java5中新增加了java.util.Queue接口，用以支持队列的常见操作。该接口扩展了java.util.Collection接口。
+
+Queue继承了Collection接口
+
+Queue使用时要尽量避免Collection的add()和remove()方法，add()和remove()方法在失败的时候会抛出异常。
+
+要使用offer()来加入元素，使用poll()来获取并移出元素。
+
+它们的优点是通过返回值可以判断成功与否， 如果要使用前端而不移出该元素，使用element()或者peek()方法。
+
+值得注意的是LinkedList类实现了Queue接口，因此我们可以把LinkedList当成Queue来用。
+　　add        增加一个元索                     如果队列已满，则抛出一个IIIegaISlabEepeplian异常
+　　remove   移除并返回队列头部的元素    如果队列为空，则抛出一个NoSuchElementException异常
+　　element  返回队列头部的元素             如果队列为空，则抛出一个NoSuchElementException异常
+　　offer       添加一个元素并返回true       如果队列已满，则返回false
+　　poll         移除并返问队列头部的元素    如果队列为空，则返回null
+　　peek       返回队列头部的元素             如果队列为空，则返回null
+　　put         添加一个元素                      如果队列满，则阻塞
+　　take        移除并返回队列头部的元素     如果队列为空，则阻塞
+————————————————
+版权声明：本文为CSDN博主「五山口老法师」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/Fly_as_tadpole/article/details/86536539
+
+### (2019.11.21)
+
+#### 01.ViewStub解析
+ViewStub 是一个看不见的，没有大小，不占布局位置的 View，可以用来懒加载布局。  
+当 ViewStub 变得可见或 inflate() 的时候，布局就会被加载（替换 ViewStub）。因此，ViewStub 一直存在于视图层次结构中直到调用了 setVisibility(int) 或 inflate()。  
+在 ViewStub 加载完成后就会被移除，它所占用的空间就会被新的布局替换。
+
+Inflate使用特点：
+
+ViewStub只能被Inflate一次，inflate之后ViewStub对象就会被置为空。即某个被ViewStub指定的布局被Inflate后，就不能够再通过ViewStub来控制它了。  
+ViewStub只能用来Inflate一个布局文件，而不是某个具体的View，当然也可以把View写在某个布局文件中。
+
+ViewStub不支持merge ：
+
+不能引入包含merge标签的布局到ViewStub中。否则会报错：  
+android.view.InflateException: Binary XML file line #1:  can be used only with a valid ViewGroup root and attachToRoot=true
+
+作者：杨充
+链接：https://juejin.im/post/5dd6176c6fb9a05a9d6bf2ba
+来源：掘金
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+作者：杨充
+链接：https://juejin.im/post/5dd6176c6fb9a05a9d6bf2ba
+来源：掘金
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+
+
 
 ### (2019.11.18)
 #### Activity中的几种启动模式(复习)

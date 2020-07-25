@@ -1,4 +1,136 @@
+
+
+
+
+### (2020.4.6-4.12)
+1.在scrollview中的子布局设置居中无效，解决方式是在scrollview外层载套一个布局，并且将子布局设置为match_parent（前提是scrollview设置了fillViewport为true），才能成功设置子布局居中。
+
+2.之前想用animation完成动画的轮播效果，即在动画结束的回调中去启动另一个动画，但是发现启动失败，于是改成了animatorSet实现。为什么失败还需要研究一下。
+
+3.目前项目中的启动页（是一个activity）和订阅界面（是一个dialog）用的同一个布局，所以使用了一个静态函数完成布局控件的初始化。但有些静态实例需要在activity的ondestroy（）的时候将其释放，于是又返回了一个回调实例用于监听，但这样的回调显得很繁琐，之后得优化这一部分。
+
+### (2020.3.30-4.5)
+1.实时存储功能在7.0以上的手机上如果要获取每个应用占用手机存储空间的大小，需要获取用户使用痕迹组权限。这个权限不能直接申请，只有跳到系统的设置界面引导用户打开才行。目前实时存储条处于应用的主界面，不适合主动申请该权限，当前该应用的applock功能和大文件清理功能都会申请这个权限，所以目前只有当用户打开这2个功能并给予权限时，实时存储条才会显示分类。
+
+2.pointer out of index这个exception目前是当可伸缩大小的view与viewpager嵌套导致onTouchEvent冲突才会出现。这个问题据查询资料显示无可避免，解决方法是给viewpager的onTouchEvent加try catch。
+
+3.关于视频的格式方面测试发现，视频的层级结构取决于格式，类似于H.263，H.264 ，H.265等，而mp4，mkv等所谓格式不过相当于视频结构外层的壳。操作视频时，视频文件的层级结构决定了视频的操作方式。
+
+### (2020.3.23-3.29)
+1.实时存储需要展示不同存储资源的占用空间，比如说图片占有多少空间，视频占有多少空间，操作系统占用多少空间等。首先研究了一下如何获取操作系统占用空间数据，发现这些数据android并没有提供任何api可以去获取。之后又去查找是否有其他的方法获取这类数据，最后总结下来均不可行。因为比如说一个手机它的内部存储为16G，但可用空间仅有13G多，操作系统占用空间就在这个数据差中，但这个数据差中还有另一个变量，那就是存储硬件厂商存储容量的统一规格。每个厂商的规格不一，导致这个差值不可估算，从而也无法算出操作系统占用多少空间。
+
+2.Activity要更新内部intent状态得在onNewintent（）里setIntent（）（目前都是从外部startActivity进入的情况，其他情况如何尚不确定）
+
+3.目前好像只有acitvity的startActivity函数可以传递或者更新intent，如果acitvityA start了activityB，在new Task的intentFlag情况下，acitivityB finish时如何给activityA传递intent，还需要研究一下
+
+### (2020.3.16-3.22)
+1.上周发现了线上出现了一个新的错误，java.lang.IndexOutOfBoundsException: Invalid index 0, size is 0，发生在viewpager设置的indicator中，开始看这个错误认为是indicator设置的时候viewpager的adapter还没有初始化，于是先初始化viewpager再调用indicator，结果发现这个错误依然存在。之后上传mapping把可能走进的调用栈全查了一遍，发现的确是数据源没有初始化，但这个indicator中如果传入的viewpager与界面上的viewpager不是同一个的话，indicator里的数据源是不对应的（indicator和viewpager的数据源不对应）。由于indicator的主要作用是显示，所以目前的解决方式是屏蔽点击事件。
+
+2.最初对加密视频播放方案的设想是能不能将本地文件转换成流媒体，然后模仿播放网络视频那样，解密一部分资源就相当于缓存一部分进度，最后播放完整个视频。但在查找过很多资料后好像没有人这么做过，目前打算研究一下这个方案的可行性
+
+### (2020.3.9-3.15)
+1.照片展示模糊，是由于之前进行压缩时设置的采样率，长，宽以及质量参数均较低，之后将其参数进行调整，又发现照片清晰了，但截图等图片依然模糊。调查后发现是获取相片详细信息的时候使用了Exif-ExifInterface获取，这个类只能获取jpeg等几个格式的图片信息，如果传入png格式的图片直接就返回空。所以没有照片信息的时候使用默认规格进行压缩，导致图片不清晰。目前改成了使用bitmapFactory获取图片信息。
+
+2.Ad sdk更新后初始化方式改变，传入的广告id最好新建一个，初始化时传入广告id的广告会在初始化时请求，但不展示导致广告数据不正常。
+
+3.关于surfaceView，测试发现并不是在所有的手机上都会进行“镂空”，有的手机会露出下方背景，有的不会，目前猜测是使用windowmanager提高了activity的安全级别产生的影响，具体原因待察。
+
+### (2020.3.2-3.8)
+1.在有的手机上照片展示界面会不断闪烁的问题：之前认为是在adapter里启用异步任务，在item不可见时仍然执行，导致item不断刷新。之后设置了tag并进行判断，同时在item被回收的时候取消异步任务操作，但发现该问题依然有。最终发现是在有的手机上，系统媒体数据库会经常刷新，导致cursorLoader观察到系统媒体数据库变化就调用onloadfinished（）回调，使照片界面不断刷新造成闪烁问题。
+
+2.还有一个刷新时闪烁的问题，于是给adapter设置了固定ID，取消glide与recycleview的动画，遂解决。
+
+3.最近工作中解决bug经常有一个问题，那就是对开发来说无法详细了解bug出现的详细情况表现与流程（并不了解是啥bug），导致寻找bug的过程需要花费很多问题且效率很低。
+
+### (2020.2.24-3.1)
+
+1.加密功能遇到的一些问题：1，如果报错：java.security.InvalidKeyException: Illegal key size
+     请更换   JDK路径\jre\lib\security 文件底下的local_policy.jar和US_export_policy.jar
+2、如果报错：java.lang.SecurityException: Cannot set up certs for trusted CAs
+     请更换  jce.jar 包 或者使用更高版本的JDK
+    3.如果报错：javax.crypto.BadPaddingException: pad block corrupted，可能是设置的key长度不对，或是被改变了
+     4.如果报错：java.nio.channels.OverlappingFileLockException：可能是不同线程同时操作了同一个文件
+
+2.之前在子线程完成io操作发现速度较慢，于是打算使用asynctask搭配线程池实现并行任务操作，结果发现会出现几个问题：1.创建的并行任务过多导致的exception；2。多个任务访问同一个文件的情况不好处理。最后还是换了一个方式，引入Rxjava实现并行操作，目前测试情况良好。
+
 # 临时备忘录
+### (2019.12.18)
+
+#### 关于SurfaceView使用过程中遇到的问题:
+
+#### 总结几个要点:
+1.SurfaceView拥有独立的Surface（绘图表面）
+
+2.SurfaceView是用Zorder排序的，他默认在宿主Window的后面，SurfaceView通过在Window上面“挖洞”（设置透明区域）进行显示.
+
+#### SurfaceView与View的区别
+
+1.View的绘图效率不高，主要用于动画变化较少的程序;
+
+2.SurfaceView 绘图效率较高，用于界面更新频繁的程序;
+
+3.SurfaceView拥有独立的Surface（绘图表面），即它不与其宿主窗口共享同一个Surface。
+
+4.一般来说，每一个窗口在SurfaceFlinger服务中都对应有一个Layer，用来描述它的绘图表面。对于那些具有SurfaceView的窗口来说，每一个SurfaceView在SurfaceFlinger服务中还对应有一个独立的Layer或者LayerBuffer，用来单独描述它的绘图表面，以区别于它的宿主窗口的绘图表面。
+因此SurfaceView的UI就可以在一个独立的线程中进行绘制，可以不会占用主线程资源。
+
+5.SurfaceView使用双缓冲机制，播放视频时画面更流畅.
+
+#### 使用场景
+
+所以SurfaceView一方面可以实现复杂而高效的UI，另一方面又不会导致用户输入得不到及时响应。常用于画面内容更新频繁的场景，比如游戏、视频播放和相机预览。
+
+#### 遇到的问题：
+  1.当SurfaceView可见时背景变成透明;
+
+  2.尝试给SurfaceView设置背景，遂添加以下代码，但发现在各个回调或是生命周期中holder.lockCanvas()方法获得的canvas都为空;
+
+```java
+if(mSnapSurfaceView != null)mSnapSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+       @Override
+       public void surfaceCreated(SurfaceHolder holder) {
+           if (mNeedPaint) {
+               mNeedPaint = false;
+               Canvas canvas = holder.lockCanvas();
+               if (canvas != null) {
+                   canvas.drawColor(Color.BLACK);
+                   holder.unlockCanvasAndPost(canvas);
+               }
+           }
+       }
+
+       @Override
+       public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) { }
+       @Override
+       public void surfaceDestroyed(SurfaceHolder holder) { }
+   });
+```   
+#### 后续解决：
+1.背景透明问题要点2就说明了，SurfaceView通过在Window上面“挖洞”（设置透明区域）进行显示.也就是说，如果按view的覆盖层级来说明，处于SurfaceView下层的都会被“挖开”，盖在SurfaceView上层的才会正常显示。
+
+2.关于这个问题，有很多需要注意的地方：
+
+1.将surfaceview的初始工作放在onCreate中，将surfaceHolder.lockCanvas()放到onCreate外，因为在onCreate中surfaceHolder画布未创建完，所以返回会为空。
+
+2.在Android开发官网上有描述，只能有一个用户使用TextureView，在提供camera preview的同时是不可以进行Canvas的绘制的，lockCanvas()的值就是null。 详情可参考：https://blog.csdn.net/tinyzhao/article/details/52681600
+
+我所碰到的是第二种情况，所以我最终的解决方式是在SurfaceView的上层盖一层ImageView。
+
+#### 拓展：什么是双缓冲机制
+
+在运用时可以理解为：SurfaceView在更新视图时用到了两张 Canvas，一张 frontCanvas 和一张 backCanvas ，每次实际显示的是 frontCanvas ，backCanvas 存储的是上一次更改前的视图。当你在播放这一帧的时候，它已经提前帮你加载好后面一帧了，所以播放起视频很流畅。
+
+当使用lockCanvas（）获取画布时，得到的实际上是backCanvas 而不是正在显示的 frontCanvas ，之后你在获取到的 backCanvas 上绘制新视图，再 unlockCanvasAndPost（canvas）此视图，那么上传的这张 canvas 将替换原来的 frontCanvas 作为新的frontCanvas ，原来的 frontCanvas 将切换到后台作为 backCanvas 。例如，如果你已经先后两次绘制了视图A和B，那么你再调用 lockCanvas（）获取视图，获得的将是A而不是正在显示的B，之后你将重绘的 A 视图上传，那么 A 将取代 B 作为新的 frontCanvas 显示在SurfaceView 上，原来的B则转换为backCanvas。
+
+相当与多个线程，交替解析和渲染每一帧视频数据。
+
+
+### (2019.12.9-12.15)
+
+1.界面中元素都用ScrollView包裹后，无法使ScrollView充满剩下的父布局。解决这个问题的办法就是，在ScrollView中添加一个Android:fillViewport="true"属性就可以了。顾名思义，这个属性允许 ScrollView中的组件去充满它。然后将包裹在其中的子布局修改为“match_parent”，即可让ScrollView充满整个父布局（当然ScrollView中子布局足够多时也可以撑满父布局，但一般ScrollView为动态数据填充，所以一般不这样）。
+
+2.之前测试的时候发现在小米手机上不给start from background 权限时，如果该activity启动模式被设置为singleInstance，即使在应用内（应用处于前台）该activity也弹不出来。估计是由于处于的栈不同所导致的，但后来思考了一下同一个应用进程下应用是否处于前台难道小米系统是依靠该activty所处栈的状态来判断的？该问题之后有时间需要再研究一下。首先打算试试android 10上不给相关权限，该activity是否会成功弹出。
+
 
 ### (2019.12.11)
 队列是一种特殊的线性表，它只允许在表的前端（front）进行删除操作，而在表的后端（rear）进行插入操作。进行插入操作的端称为队尾，进行删除操作的端称为队头。队列中没有元素时，称为空队列。
